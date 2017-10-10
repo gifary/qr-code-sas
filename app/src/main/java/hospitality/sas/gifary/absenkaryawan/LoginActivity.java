@@ -10,16 +10,15 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+import hospitality.sas.gifary.absenkaryawan.model.Karyawan;
+import hospitality.sas.gifary.absenkaryawan.model.KaryawanReponse;
 
-import com.loopj.android.http.JsonHttpResponseHandler;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import cz.msebera.android.httpclient.Header;
-import hospitality.sas.gifary.absenkaryawan.net.RestClient;
-import hospitality.sas.gifary.absenkaryawan.net.RestResponseHandler;
+import hospitality.sas.gifary.absenkaryawan.rest.ApiClient;
+import hospitality.sas.gifary.absenkaryawan.rest.ApiInterface;
 import hospitality.sas.gifary.absenkaryawan.utils.UserUtil;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * A login screen that offers login via email/password.
@@ -31,7 +30,6 @@ public class LoginActivity extends AppCompatActivity {
     private EditText mPasswordView,mEmailView;
     private View mProgressView;
     private View mLoginFormView;
-    private JsonHttpResponseHandler loginHandler;
     private static final String TAG = LoginActivity.class.getSimpleName();
 
     @Override
@@ -68,9 +66,7 @@ public class LoginActivity extends AppCompatActivity {
      * errors are presented and no actual login attempt is made.
      */
     private void attemptLogin() {
-        if (loginHandler != null) {
-            return;
-        }
+        mProgressView.setVisibility(View.VISIBLE);
 
         // Reset errors.
         mEmailView.setError(null);
@@ -98,52 +94,37 @@ public class LoginActivity extends AppCompatActivity {
             // There was an error; don't attempt login and focus the first
             // form field with an error.
             focusView.requestFocus();
+            mProgressView.setVisibility(View.GONE);
         } else {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
-            loginHandler = new RestResponseHandler(TAG){
-                @Override
-                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                    if (Constants.DEBUG) Log.d(TAG, "login response: " + response);
+            ApiInterface apiservice = ApiClient.getClient().create(ApiInterface.class);
 
-                    try {
-                        if (isSuccess(response)) {
-                            JSONObject data = response.getJSONObject("data");
-                            Toast.makeText(getBaseContext(),"Sukses Login",Toast.LENGTH_LONG).show();
-                            finish(true, data,"");
-                        } else {
-                            Toast.makeText(getBaseContext(),response.getString("message")+"",Toast.LENGTH_LONG).show();
-                            loginHandler = null;
-                        }
-                    } catch (JSONException e) {
-                        Log.e(TAG, "login response: " + response, e);
+            Call<KaryawanReponse>  call = apiservice.login(mEmailView.getText().toString(), mPasswordView.getText().toString());
+            call.enqueue(new Callback<KaryawanReponse>() {
+                @Override
+                public void onResponse(Call<KaryawanReponse> call, Response<KaryawanReponse> response) {
+                    Log.d(TAG, response.body().toString());
+                    int statuscode = response.body().getCode();
+                    if(statuscode==200){  //sukses login
+                        mProgressView.setVisibility(View.GONE);
+                        Toast.makeText(getBaseContext(),response.body().getMessage(),Toast.LENGTH_SHORT).show();
+                        finish(response.body().getData(),"");
+                    }else{
+                        mProgressView.setVisibility(View.GONE);
+                        Toast.makeText(getBaseContext(),response.body().getMessage(),Toast.LENGTH_SHORT).show();
                     }
                 }
 
                 @Override
-                public void onSuccess(int statusCode, Header[] headers, String responseString) {
-                    Log.d(TAG, "response is string: " + responseString);
-                }
-
-                @Override
-                public void onStart() {
-                    super.onStart();
-                    mProgressView.setVisibility(View.VISIBLE);
-                }
-
-                @Override
-                public void onFinish() {
-                    super.onFinish();
+                public void onFailure(Call<KaryawanReponse> call, Throwable t) {
+                    Toast.makeText(getBaseContext(),"Sometihing worng",Toast.LENGTH_SHORT).show();
                     mProgressView.setVisibility(View.GONE);
+                    if(Constants.DEBUG){
+                        Log.e(TAG, t.toString());
+                    }
                 }
-
-                @Override
-                public void onCancel() {
-                    super.onCancel();
-                    loginHandler = null;
-                }
-            };
-            RestClient.getInstance(this, loginHandler).postLogin(email, password, true);
+            });
         }
     }
 
@@ -158,17 +139,11 @@ public class LoginActivity extends AppCompatActivity {
     }
 
 
-    private void finish(boolean ok, JSONObject data,String token) {
-        if (ok) {
-            try {
-                UserUtil.getInstance(this).signIn(data,token);
-            } catch (JSONException e) {
-                Log.e(TAG, e.getMessage(), e);
-            }
-            Intent intent = new Intent(this, MainActivity.class);
-            startActivity(intent);
-            finish();
-        }
+    private void finish(Karyawan karyawan, String token) {
+        UserUtil.getInstance(this).signIn(karyawan,token);
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
+        finish();
     }
 
 }

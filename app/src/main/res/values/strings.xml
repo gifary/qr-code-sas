@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">QR Code Karyawan</string>
+    <string name="app_name">HRMS Karyawan</string>
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>

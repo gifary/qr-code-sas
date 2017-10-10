@@ -8,6 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import hospitality.sas.gifary.absenkaryawan.Constants;
+import hospitality.sas.gifary.absenkaryawan.model.Karyawan;
 
 /**
  * Created by gifary on 25/09/17.
@@ -76,11 +77,11 @@ public class UserUtil {
         return !getEmail().isEmpty();
     }
 
-    public void signIn(JSONObject data, String token) throws JSONException {
-        setIntProperty(Constants.USER_ID, data.getInt("user_id"));
-        setStringProperty(Constants.USER_FULL_NAME, data.getString("nama"));
-        setStringProperty(Constants.USER_EMAIL, data.getString("email_perusahaan"));
-        setStringProperty(Constants.USER_NIK, data.getString("nik"));
+    public void signIn(Karyawan karyawan,String token){
+        setStringProperty(Constants.USER_ID, karyawan.getUserId());
+        setStringProperty(Constants.USER_FULL_NAME,karyawan.getNama());
+        setStringProperty(Constants.USER_EMAIL,karyawan.getEmailPerusahaan());
+        setStringProperty(Constants.USER_NIK,karyawan.getNik());
     }
 
     public void signOut() {

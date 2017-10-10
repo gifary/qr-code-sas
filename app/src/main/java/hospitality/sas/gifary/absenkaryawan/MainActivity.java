@@ -38,7 +38,9 @@ public class MainActivity extends AppCompatActivity {
         nama.setText(UserUtil.getInstance(this).getFullName());
         nip.setText(UserUtil.getInstance(this).getNIK());
         try {
-            bitmap = TextToImageEncode(UserUtil.getInstance(this).getNIK());
+            bitmap = TextToImageEncode(UserUtil.getInstance(this).getNIK()+"-"
+                    + UserUtil.getInstance(this).getId()+"-"
+                    +UserUtil.getInstance(this).getEmail());
 
             qrCode.setImageBitmap(bitmap);
 
@@ -82,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
             for (int x = 0; x < bitMatrixWidth; x++) {
 
                 pixels[offset + x] = bitMatrix.get(x, y) ?
-                        getResources().getColor(R.color.black):getResources().getColor(R.color.white);
+                        getResources().getColor(R.color.colorPrimary):getResources().getColor(R.color.white);
             }
         }
         Bitmap bitmap = Bitmap.createBitmap(bitMatrixWidth, bitMatrixHeight, Bitmap.Config.ARGB_4444);
